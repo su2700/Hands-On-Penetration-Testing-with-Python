@@ -1,32 +1,49 @@
-#!/usr/bin/python3.5
-def genMethod():
-    a=100
+#!/usr/bin/env python3
+"""
+⚡ Generators
+Generators are lazy... in a good way! 🛌
+They give you one value at a time instead of everything at once.
+This saves memory! 🧠
+"""
+
+def gen_method():
+    """
+    A simple generator function.
+    Notice the 'yield' keyword instead of 'return'.
+    """
+    a = 100
     for i in range(3):
-        print("A before increment : " +str(a))
-        a=a+1
-        yield a
-        print("A after increment : " +str(a))
+        print(f"   [Inside Gen] 'a' is {a}, getting ready to yield...")
+        a = a + 1
+        yield a  # ⏸️ PAUSE HERE and give value
+        print(f"   [Inside Gen] Resumed! 'a' is now {a}")
 
-def driver_for():
-    for a in genMethod():
-        print("A is : "+str(a))
-        print("--------------")
-def driver():
-	v=genMethod()
-	next(v)
-	print("----------------------")
-	next(v)
-	print("----------------------")
-	next(v)
-	print("----------------------")
-#driver()'
-driver_for()
+def driver_loop():
+    """
+    Drives the generator using a loop.
+    """
+    print("🚗 Starting Loop Driver...")
+    for value in gen_method():
+        print(f"👉 Received value: {value}")
+        print("   --------------")
 
+def driver_manual():
+    """
+    Drives the generator manually using next().
+    """
+    print("\n🚜 Starting Manual Driver...")
+    v = gen_method()
+    
+    print("1️⃣ Calling next()...")
+    print(f"   Got: {next(v)}")
+    
+    print("2️⃣ Calling next()...")
+    print(f"   Got: {next(v)}")
+    
+    print("3️⃣ Calling next()...")
+    print(f"   Got: {next(v)}")
 
-def foo():
-	print ("begin")
-	for i in range(3):
-		print ("before yield", i)
-		yield i
-		print ("after yield", i)
-
+# Uncomment the one you want to run!
+# driver_manual() 
+driver_loop()
+print("\n🏁 Generator demo finished!")

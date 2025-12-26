@@ -1,38 +1,47 @@
-#! /usr/bin/python3.5
-print("------ Iterate over strings ------")
-my_str="Hello"
-for s in my_str:
-	print(s)
+#!/usr/bin/env python3
+"""
+🔄 Advanced For Loops
+Looping over different data types! 📦
+"""
 
-print("------ Iterate over Lists------")
-my_list=[1,2,3,4,5,6]
-for l in my_list:
-	print(l)
-print("------ Iterate over Lists with index and value ------")
-my_list=[1,2,3,4,5,6]
-for index,value in enumerate(my_list):
-	print(index,value)
+# 🧵 Iterate over Strings
+print("\n🔤 --- Strings ---")
+my_string = "Hello"
+for char in my_string:
+    print(f"  '{char}'")
 
-print("------ Iterate over Dictionary Keys  ------")
-my_dict={"k1":"v1","k2":"v2","k3":"v3"}
+# 📋 Iterate over Lists
+print("\n📜 --- Lists ---")
+my_list = [1, 2, 3, 4, 5, 6]
+for item in my_list:
+    print(f"  Item: {item}")
+
+# 🔢 Iterate over Lists (with Index)
+print("\n📍 --- Lists with Index (enumerate) ---")
+for index, value in enumerate(my_list):
+    print(f"  Index: {index} -> Value: {value}")
+
+# 🔑 Iterate over Dictionary Keys
+print("\n🔑 --- Dictionary Keys ---")
+my_dict = {"k1": "v1", "k2": "v2", "k3": "v3"}
 for key in my_dict:
-	print("Key : "+key+ " Value : "+ my_dict[key])
+    print(f"  Key: {key} -> Value: {my_dict[key]}")
 
-print("------ Iterate over Dictionary with items()  ------")
-my_dict={"k1":"v1","k2":"v2","k3":"v3"}
-for key,value in my_dict.items():
-	print("Key : "+key+ " Value : "+ value)
+# 🗝️ Iterate over Dictionary Items (Key & Value)
+print("\n🗝️ --- Dictionary .items() ---")
+for key, value in my_dict.items():
+    print(f"  Key: {key} -> Value: {value}")
 
-
-print("------ Iterate over Tuples  ------")
-my_tuple=(1,2,3,4,5)
+# 📦 Iterate over Tuples
+print("\n📦 --- Tuples ---")
+my_tuple = (1, 2, 3, 4, 5)
 for value in my_tuple:
-	print(value)
+    print(f"  Value: {value}")
 
-print("------ Iterate over Set  ------")
-my_set={2,2,3,3,5,5}
+# 🧩 Iterate over Sets
+print("\n🧩 --- Sets (Unique items only!) ---")
+my_set = {2, 2, 3, 3, 5, 5}
 for value in my_set:
-	print(value)
+    print(f"  Value: {value}")
 
-
-
+print("\n🏁 All loops done!")

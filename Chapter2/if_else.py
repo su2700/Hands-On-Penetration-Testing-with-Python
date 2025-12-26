@@ -1,49 +1,63 @@
-#!/usr/bin/python3.5
-a=22;b=44;c=55;d=None
+#!/usr/bin/env python3
+"""
+🚦 If-Else & Bitwise Operators
+Decisions, decisions... and some binary magic! 🪄
+"""
+
+a = 22
+b = 44
+c = 55
+d = None
+
+# Basic Check
+print("\n--- 🤔 Basic Check ---")
 if a and b and c and d:
-	print("Not printed")
+    print("❌ All True")
 else:
-	print('Remember and operator -> All must evaluate to True !')
+    print("✅ Condition failed (one was False/None).")
+
 if a == b:
-	print("A and B are equal")
+    print("❌ They are equal.")
 else:
-	print("A and B are not equal ! But we saw how to use == :)")
-print("\nLets use some Bit wise operators with condition statements :\n")
-a=2;b=2;c=0
-bit_wise=a & b & c
-if bit_wise:
-	print("Bit wise and returned non zero %s"%bit_wise)
-else:
-	print("Bit wise and returned zero : %s"%bit_wise)
-bit_wise=a&b
-if bit_wise:
-	print("Now Bit wise and returned non zero : %s"%bit_wise)
-else:
-	print("Again Bit wise and returned zero : %s"%bit_wise)
+    print(f"✅ {a} is NOT equal to {b}.")
 
-bit_wise_or = a | c
-if bit_wise_or:
-	print("BIt wise OR - Should return 2 -> %s"%bit_wise_or)
-else:
-	print("Thats strange !! -> %s"%bit_wise_or)
+# Bitwise Magic
+print("\n--- 🧙‍♂️ Bitwise Magic ---")
+val_a = 2
+val_b = 2
+val_c = 0
 
-left_shift= a << b
+# AND operator
+print("\n👉 Bitwise AND (&)")
+result = val_a & val_b & val_c
+if result:
+    print(f"   Result: {result} (Non-Zero)")
+else:
+    print(f"   Result: {result} (Zero)")
+
+result_ab = val_a & val_b
+if result_ab:
+    print(f"   {val_a} & {val_b} = {result_ab} (Non-Zero) ✅")
+
+# OR operator
+print("\n👉 Bitwise OR (|)")
+res_or = val_a | val_c
+if res_or:
+    print(f"   {val_a} | {val_c} = {res_or} (Should be 2)")
+
+# Shifts
+print("\n👉 Bit Shifts (<< >>)")
+left_shift = val_a << val_b
 if left_shift:
-	print("Remember Left shift has multiplication impact. -> %s"%left_shift)
-else:
-	print("Thats strange !! -> %s"%left_shift)
+    print(f"   {val_a} << {val_b} = {left_shift} (Multiplication!)")
 
-right_shift= a >> b
+right_shift = val_a >> val_b
 if right_shift:
-	print("Thats strange !! -> %s"%right_shift)
+    print(f"   {val_a} >> {val_b} = {right_shift}")
 else:
-	print("Remember Right shift has division impact.  -> %s"%right_shift)
-neg_minus_1= ~ a
-if neg_minus_1 :
-	print("~ operator has (-n-1) impact - (-n-1) for %s -> %s "%(a,neg_minus_1))
-else:
-	print("~ operator has (-n-1) impact - Produced 0  -> %s"%neg_minus_1)
-	
+    print(f"   {val_a} >> {val_b} = {right_shift} (Zero - Division effect)")
 
-
-
+# Negation
+print("\n👉 Bitwise NOT (~)")
+neg_val = ~val_a
+print(f"   ~{val_a} = {neg_val} (It flips bits! Usually -x-1)")

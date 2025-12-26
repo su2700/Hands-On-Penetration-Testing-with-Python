@@ -1,9 +1,16 @@
-#! /usr/bin/python3.5
+#!/usr/bin/env python3
+"""
+👨‍👦 Parent Script
+I am the Parent. I check on the Child.
+"""
+
 import child as c
+
 def parent_method():
-	print("--------------------")
-	print("IN parent method -Invoking child()")
-	c.child_method()
-	print("--------------------\n")
+    print("\n👨 Parent: Checking on child...")
+    print("--------------------")
+    c.child_method()
+    print("--------------------")
+    print("👨 Parent: Good job child.\n")
 
 parent_method()

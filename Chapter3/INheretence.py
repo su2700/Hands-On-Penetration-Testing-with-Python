@@ -1,61 +1,79 @@
-#! /usr/bin/python3.5
-class Id_Generator():
-    def __init__(self):
-        self.id=0
-    def generate(self):
-        self.id=self.id + 1
-        return self.id
-class Department():
-	def __init__(self,name,location):
-		self.name=name
-		self.loc=location
-	def DepartmentInfo(self):
-		return "Department Name : " +str(self.name) +", Location : " +str(self.loc)
+#!/usr/bin/env python3
+"""
+🧬 Inheritance
+The Family Tree! 🌳
+Employees inherit traits from... well, nobody in real life, 
+but here they are composed of Departments, Managers, and Addresses!
+"""
 
+# 🆔 ID Maker
+class IdGenerator():
+    def __init__(self):
+        self.curr = 0
+    def generate(self):
+        self.curr += 1
+        return self.curr
+
+# 🏢 Department
+class Department():
+    def __init__(self, name, loc):
+        self.name = name
+        self.loc = loc
+    def get_info(self):
+        return f"{self.name} ({self.loc})"
+
+# 👔 Manager
 class Manager():
-	def __init__(self,m_id,name):
-		self.m_id=m_id
-		self.name=name
-	def ManagerInfo(self):
-		return "Manager Name : " +str(self.name) +",  Manager id : " +str(self.m_id)
+    def __init__(self, m_id, name):
+        self.m_id = m_id
+        self.name = name
+    def get_info(self):
+        return f"{self.name} (ID: {self.m_id})"
+
+# 📍 Address
 class Address():
-	def __init__(self,country,state,area,street,zip_code):
-		self.country=country
-		self.state=state
-		self.area=area
-		self.street=street
-		self.zip_code=zip_code
-	def AddressInfo(self):
-		return "Country : " +str(self.country)+", State : " +str(self.state)+", Street : "+str(self.area)	
+    def __init__(self, country, city, street):
+        self.country = country
+        self.city = city
+        self.street = street
+    def get_info(self):
+        return f"{self.street}, {self.city}, {self.country}"
+
+# 👷 Employee (The central hub)
 class Employee():
-    def __init__(self,Name,id_gen,dept=None,manager=None,address=None):
-        self.Id=id_gen.generate()
-        self.Name=Name
-        self.D_id=None
-        self.Salary=None
-        self.dept=dept
-        self.manager=manager
-        self.address=address
-    def printDetails(self):
-        print("\n")
-        print("Employee Details : ")
-        print("ID : " +str(self.Id))
-        print("Name : " +str(self.Name))
-        print("Salary : " + str(self.Salary))
-        print("Department :\n\t"+str(self.dept.DepartmentInfo()))
-        print("Manager : \n\t" +str(self.manager.ManagerInfo()))
-        print("Address : \n\t" +str(self.address.AddressInfo()))
-        print("------------------------------")
-Id_gen=Id_Generator()
-m=Manager(100,"Manager X")
-d=Department("IT","Delhi")
-a=Address("UAE","Dubai","Silicon Oasis","Lavista 6","xxxxxx")
-emp1=Employee("Emp1",Id_gen,d,m,a)
-emp1.Salary=20000
-emp1.D_id=2
-emp1.printDetails()
-"""emp2=Employee("Emp2",Id_gen)
-emp2.Salary=10000
-emp2.D_id=1
-emp1.printDetails()
-emp2.printDetails()"""
+    def __init__(self, name, id_gen, dept, manager, address):
+        self.id = id_gen.generate()
+        self.name = name
+        self.dept = dept
+        self.mgr = manager
+        self.addr = address
+        self.salary = 0 # Default
+        
+    def print_details(self):
+        print("\n" + "-"*30)
+        print(f"📄 RECORD: {self.name}")
+        print("-"*30)
+        print(f"   🆔 System ID: {self.id}")
+        print(f"   💰 Salary:    ${self.salary}")
+        print(f"   🏢 Dept:      {self.dept.get_info()}")
+        print(f"   👔 Manager:   {self.mgr.get_info()}")
+        print(f"   📍 Address:   {self.addr.get_info()}")
+        print("-"*30 + "\n")
+
+# 🌍 World Building
+if __name__ == "__main__":
+    gen = IdGenerator()
+    
+    # 🏗️ Create Components
+    dept_it = Department("Cyber Security", "Bunker 1")
+    boss = Manager(101, "Agent Smith")
+    home = Address("Matrix", "Zion", "Sector 7")
+    
+    # 👶 Create Employee
+    neo = Employee("Neo", gen, dept_it, boss, home)
+    neo.salary = 500000
+    
+    # 🖨️ Print
+    neo.print_details()
+    
+    print("✅ Employee Database Updated.")

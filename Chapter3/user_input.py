@@ -1,12 +1,26 @@
-#! /usr/bin/python3.5
+#!/usr/bin/env python3
+"""
+⌨️ User Input
+Talking to the script! 🗣️
+"""
 
 def main():
-	num_1=input("Enter First number : ")
-	num_2=input("Enter Second number : ")
-	sum_=num_1+num_2
-	print("Sum is : "+str(sum_))
-	print("Surprised !! ,input() returns String")
-	print("Actuall sum : " +str(int(num_1)+int(num_2)))
+    print("\n--- ➕ Adder Bot 3000 ---")
+    
+    # ⚠️ input() ALWAYS returns a String!
+    str_1 = input("   👉 Enter First Number: ")
+    str_2 = input("   👉 Enter Second Number: ")
+    
+    # String Concatenation 🧵
+    str_sum = str_1 + str_2
+    print(f"\n   🧵 String Concatenation: '{str_sum}' (Wait, that's not math!)")
+    
+    # Integer Addition 🧮
+    try:
+        real_sum = int(str_1) + int(str_2)
+        print(f"   ✅ Real Math Sum:        {real_sum}")
+    except ValueError:
+        print("   ❌ Oops! Those weren't valid numbers.")
 
-main()
-
+if __name__ == "__main__":
+    main()

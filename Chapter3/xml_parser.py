@@ -1,58 +1,73 @@
-#! /usr/bin/python3.5
+#!/usr/bin/env python3
+"""
+📑 XML Parser
+Reading structured data like a pro! 👓
+"""
+
 import xml.etree.ElementTree as ET
 import sys
-class XML_parser():
-	def __init__(self,xml):
-		self.xml=xml
-		
-	def parse(self,parse_type="doc"):
-		#root=ET.fromstring(country_data_as_string)
-		if parse_type =="doc":
-			root = ET.parse(self.xml).getroot()
-		else:
-			root=ET.fromstring(self.xml)
-		tag = root.tag
-		print("Root tag is :"+str(tag))
-		attributes = root.attrib
-		print("Root attributes are :")
-		for k,v in attributes.items():
-			print("\t"+str(k) +"  : "+str(v))
-		print("\nPrinting Node Details without knowing subtags :")
-		for employee in root: #.findall(tag)
-			# access all elements in node
-			print("\n-----------------------------")
-			for element in employee:
-				ele_name = element.tag
-				ele_value = employee.find(element.tag).text
-				print("\t\t"+ele_name, ' : ', ele_value)
+import os
 
-		print("\n\nPrinting Node Details specifying subtags :")
-		for employee in root.findall("employee"):
-			print("\n-----------------------------")
-			print("\t\tName :" +str(employee.find("name").text))
-			print("\t\tSalary :" +str(employee.find("salary").text))
-			print("\t\tAge :" +str(employee.find("age").text))
-			print("\t\tManager Id :" +str(employee.find("manager_id").text))
-			print("\t\tDOJ :" +str(employee.find("doj").text))		
-obj=XML_parser(sys.argv[1])
-obj.parse()
+class XMLParser:
+    def __init__(self, xml_source, is_file=True):
+        self.xml_source = xml_source
+        self.is_file = is_file
+        
+    def parse(self):
+        print(f"\n📂 Parsing {'File' if self.is_file else 'String'}...")
+        
+        # 🌳 Build the Tree
+        if self.is_file:
+            if not os.path.exists(self.xml_source):
+                print(f"   ❌ File not found: {self.xml_source}")
+                return
+            root = ET.parse(self.xml_source).getroot()
+        else:
+            root = ET.fromstring(self.xml_source)
 
-xml="""<employees department="IT"  location="Dubai">
+        # 🌱 Root Info
+        print(f"   🌱 Root Tag: <{root.tag}>")
+        print("   🏷️  Root Attributes:")
+        for k, v in root.attrib.items():
+            print(f"      - {k}: {v}")
+
+        # 🍂 Leaves (Nodes)
+        print("\n🔍 Scanning Employees...")
+        
+        # Iterate over all children (Employees)
+        for employee in root:
+            print(f"\n   👤 Employee Found:")
+            
+            # Auto-discover child tags (Name, Salary, etc)
+            for element in employee:
+                print(f"      🔹 {element.tag.capitalize()}: {element.text}")
+                
+        print("\n✅ Parsing Complete!")
+
+# 🧪 Test Data (Embedded Backup)
+test_xml = """<employees department="IT" location="Dubai">
     <employee id="1">
         <name>Emp1</name>
-	<age>32</age>
-	<salary>30000</salary>
-	<doj>06/06/2016</doj>
-	<manager_id>33</manager_id>
+        <age>32</age>
+        <salary>30000</salary>
+        <doj>06/06/2016</doj>
+        <manager_id>33</manager_id>
     </employee>
     <employee id="2">
         <name>Emp2</name>
-	<age>28</age>
-	<salary>27000</salary>
-	<doj>18/02/2017</doj>
-	<manager_id>33</manager_id>
+        <age>28</age>
+        <salary>27000</salary>
+        <doj>18/02/2017</doj>
+        <manager_id>33</manager_id>
     </employee>
 </employees>"""
-#obj=XML_parser(xml)
-#obj.parse("string")
 
+if __name__ == "__main__":
+    # Check if user provided a file argument
+    if len(sys.argv) > 1:
+        parser = XMLParser(sys.argv[1], is_file=True)
+        parser.parse()
+    else:
+        print("⚠️ No file provided. Using Demo String data.")
+        parser = XMLParser(test_xml, is_file=False)
+        parser.parse()

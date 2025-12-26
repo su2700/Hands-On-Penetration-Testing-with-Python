@@ -1,77 +1,81 @@
-#! /usr/bin/python3.6
-class Id_Generator():
-	def __init__(self):
-		self.id=0
-	def generate(self):
-		self.id=self.id + 1
-		return self.id
+#!/usr/bin/env python3
+"""
+🏭 Classes & Objects
+The Factory Floor! defining templates for Employees and Specialists. 👷
+"""
 
+# 🆔 Automatic ID Maker
+class IdGenerator():
+    def __init__(self):
+        self.id = 0
+    def generate(self):
+        self.id += 1
+        return self.id
+
+# 👤 Base Employee
 class Employee():
-	
-	def __init__(self,Name,id_gen):
-		self.Id=id_gen.generate()
-		self.Name=Name
-		self.D_id=None
-		self.Salary=None
-	
-	def printDetails(self):
-		print("\n")
-		print("Employee Details : ")
-		print("ID : " +str(self.Id))
-		print("Name : " +str(self.Name))
-		print("Salary : " + str(self.Salary))
-		print("------------------------------")
+    def __init__(self, name, id_gen):
+        self.id = id_gen.generate()
+        self.name = name
+        self.salary = None
+    
+    def print_details(self):
+        print(f"\n👤 Employee: {self.name} (ID: {self.id})")
+        print(f"   💰 Salary: {self.salary}")
 
+# 💻 Programmer (Specialized Employee)
 class Programmer(Employee):
-	def __init__(self,name,id_gen,lang=None,
-		db=None,projects=None,**add_skills):
-		self.languages=lang
-		self.db=db
-		self.projects=projects
-		self.add_skils=add_skills
-		super().__init__(name,id_gen)
-	def printSkillDetails(self):
-		print("ID : " +str(self.Id))
-		print("Name : " +str(self.Name))
-		print("Salary : " + str(self.Salary))
-		print("Languages : ")
-		for l in self.languages:
-			print("\t" +str(l))
-		print("Databases : ")
-		for d in self.db:
-			print("\t" +str(d))
-		print("Projects : ")
-		for p in self.projects:
-			print("\t" +str(p))
-		print("Add Skills : ")
-		for k,v in self.add_skils.items():
-			print("\t"+str(k) +" : ")
-			for skill in v :
-				print("\t\t"+str(skill))		
-Id_gen=Id_Generator()
-p=Programmer("Programmer1",Id_gen,["c","c++","java",
-	"python","vb"],
-	["mysql","sql server","oracle"],
-	["PT Framework","Web scanning Framework",
-	"SOC Orchestration Framework"],
-	os=["windows","centos","kali"],
-	nosql=["mongo db","redis","rabbit mq","basex"]
-	,data_science=["machine learning","AI",
-	"Regression Models","Classification Models",
-	"Clustering","Neural Networks","NLP"])
-p.printSkillDetails()
+    def __init__(self, name, id_gen, lang=None, db=None, projects=None, **skills):
+        # Initialize Parent
+        super().__init__(name, id_gen)
+        
+        # Specialist Attributes
+        self.languages = lang if lang else []
+        self.db = db if db else []
+        self.projects = projects if projects else []
+        self.extra_skills = skills # **kwargs for extra stuff
+        
+    def print_skill_details(self):
+        print("\n" + "="*40)
+        print(f"💻 PROGRAMMER PROFILE: {self.name}")
+        print("="*40)
+        print(f"   🔢 ID: {self.id}")
+        print(f"   💰 Salary: {self.salary}")
+        
+        print("\n   🗣️  Languages:")
+        for l in self.languages:
+            print(f"      - {l}")
+            
+        print("\n   🗄️  Databases:")
+        for d in self.db:
+            print(f"      - {d}")
+            
+        print("\n   🚀 Projects:")
+        for p in self.projects:
+            print(f"      - {p}")
+            
+        print("\n   ✨ Extra Skills:")
+        for category, items in self.extra_skills.items():
+            print(f"      🔹 {category.replace('_', ' ').title()}:")
+            for item in items:
+                print(f"          • {item}")
+        print("="*40 + "\n")
 
-
-#emp1.printDetails()
-#emp2.printDetails()
-
-
-"""
-emp1=Employee("Emp1",Id_gen)
-emp1.Salary=20000
-emp1.D_id=2
-emp2=Employee("Emp2",Id_gen)
-emp2.Salary=10000
-emp2.D_id=1
-"""
-
+# 🏗️ Execution
+if __name__ == "__main__":
+    id_machine = IdGenerator()
+    
+    # Hiring a Super Coder
+    coder = Programmer(
+        "Neo", 
+        id_machine,
+        lang=["Python", "C++", "Java"],
+        db=["MySQL", "PostgreSQL"],
+        projects=["Matrix v1", "Defense Grid"],
+        # Extra Skills (**kwargs)
+        os=["Linux (Kali)", "Windows"],
+        hacking=["Penetration Testing", "Reverse Engineering"]
+    )
+    
+    coder.salary = 150000
+    coder.print_skill_details()
