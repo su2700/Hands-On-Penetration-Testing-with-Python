@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+🦊 Dumpzilla
+Forensic extraction tool for Firefox-based browsers. 🕵️‍♂️
+Extracts cookies, history, downloads, passwords, and more!
+"""
+
 
 import sqlite3, sys, glob, shutil, json, time, hashlib
 from base64 import b64decode

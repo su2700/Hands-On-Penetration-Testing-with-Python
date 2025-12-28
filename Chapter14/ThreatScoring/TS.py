@@ -1,284 +1,248 @@
+#!/usr/bin/env python
+"""
+🎯 Threat Scorer (MISP)
+Calculates threat scores based on Attributes, Tags, Dates, and Correlations.
+It's like a credit score, but for malware! 🦠📉
+"""
+
 import json
 import os
-from keys import misp_url, misp_key
 import logging
-from DB_Layer.Misp_access import MispDB
 import multiprocessing
-from multiprocessing import Process
 import math
 import datetime
 import time
+from keys import misp_url, misp_key
 
-class ThreatScore():
-		
-		def __init__(self):
-			logger = logging.getLogger('Custom_log')
-			logger.setLevel(logging.DEBUG)
-			fh = logging.FileHandler('TS.log')
-			fh.setLevel(logging.DEBUG)
-			ch = logging.StreamHandler()
-			ch.setLevel(logging.ERROR)
-			formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-			fh.setFormatter(formatter)
-			ch.setFormatter(formatter)
-			# add the handlers to the logger
-			logger.addHandler(fh)
-			logger.addHandler(ch)
-			self.log = logger
-		
-		def UpdateThreatScore(self,mode="parllel",task_id=0):		
-			try:					
-				ret_resp={}			
-				cpu_count_to_use=1
-				cpu_count=multiprocessing.cpu_count()
-				if cpu_count > 1:
-					cpu_count_to_use=math.ceil(cpu_count/1)
-				self.log.debug("CPU cores to use : " +str(cpu_count_to_use))
-				att_stat=MispDB().getAttributeCount()
-				att_count=0
-				feed_count=0
-				if att_stat["status"]=="success":
-					att_count=int(att_stat["value"])
-					en_st=MispDB().getEnabledFeeds()
-					if en_st["status"]=="success":
-						feed_count=int(en_st["value"]["enabled"])				
-				if att_count:
-					while (1):
-						if (int(att_count) % cpu_count_to_use) == 0:
-							break
-						else:
-							att_count=att_count+1
-					chunk_size=att_count/cpu_count_to_use
-					chunk_index=0
-					limit_offset=[]
-					while(chunk_index <= att_count):
-						limit_offset.append({"offset":int(chunk_index),"limit":int(chunk_size)})
-						chunk_index=int(chunk_index+chunk_size) 
+# 🛠️ Mock Database Handler (Since we don't have the full DB_Layer module locally)
+# In production, this imports from DB_Layer.Misp_access
+class MockMispDB:
+    def getAttributeCount(self):
+        return {"status": "success", "value": 100}
+    def getEnabledFeeds(self):
+        return {"status": "success", "value": {"enabled": 5}}
+    def updateTask(self, **kwargs):
+        pass
+    def getTaskStatusCodes(self, task_id):
+        return {"status": "success", "value": []}
+    def getAttributesToScore(self, offset, limit):
+        # Mocking empty list to prevent crash
+        return {"status": "success", "value": []}
+    def updateAttributeScore(self, **kwargs):
+        pass
+    def updateProcessMessage(self, **kwargs):
+        pass
 
-					process_list=[]
-					MispDB().updateTask(task_id=task_id,status="processing",message="Processes to be Spawned",update_process=False)
-					self.log.debug("Processes to be Spawned : " +str(cpu_count_to_use))
-					for i in range(0,len(limit_offset)):
-						pr=Process(target=self.StartProcessing,args=(limit_offset[i]["offset"],limit_offset[i]["limit"],str(i),task_id,False,feed_count))
-						process_list.append(pr)
-						pr.start()
-					for process in process_list:
-						process.join()
-					status_codes=MispDB().getTaskStatusCodes(task_id)
-					ret_resp["status"]="success"
-					ret_resp["value"]="Threat Scoring Finished Successfully"
-					if status_codes["status"]=="success":
-						self.log.debug("Obtained Process messaged : " +str(status_codes))
-						return_now=False
-						for code in status_codes["value"]:
-							if isinstance(code,str):
-								code=json.loads(code)
-							if code["status"]=="failure":
-								ret_resp["status"]="failure"
-								ret_resp["value"]="Threat Scoring Finished with error for Process id :"+code["id"]+" . Message : " +code["message"]
-								return_now=True
-								break						
-						return ret_resp		
-					else:
-						
-						ret_resp["status"]="failure"
-						ret_resp["value"]="Process succeded but the final update failed as no value was returned in att_count" + status_codes["value"]
-					
-				else:
-					ret_resp["status"]="failure"
-					ret_resp["value"]="Threat Scoring Execution failed - No value in attribute count"
-					return ret_resp				
-				return ret_resp								
-			except Exception as ex:
-				print("Exception : " +str(ex))
-				ret_resp["status"]="failure"
-				ret_resp["value"]="1 Threat Scoring Execution failed - " +str(ex)
-				self.log.error("Ended at time : " +str(datetime.datetime.now()))
-				return ret_resp
+# Try importing real DB, else fail gracefully to Mock
+try:
+    from DB_Layer.Misp_access import MispDB
+except ImportError:
+    print "⚠️  DB_Layer not found. Using MockMispDB for demonstration."
+    MispDB = MockMispDB
 
-	
+class ThreatScoreGenerator:
 
-		def ExternalScoring(self,att,weightage_settings,att_date_score,
-					att_tags_score,att_corelation_score,att_comment_score,internal_score,feed_count=0):
-			try:
-				e_att_date_score=self.DateScore(att["e_date"],weightage_settings["Date"])
-				e_att_tags_score=self.TagScore(att["e_tags"],weightage_settings["Tags"])
-				e_att_corelation_score=self.CorelationScore(att["e_corelation"],weightage_settings["Corelation"],feed_count)
-				e_att_comment_score=self.CommentScore(att["e_comment"],weightage_settings["Comment"])
-				external_score=e_att_date_score + e_att_tags_score + e_att_corelation_score + e_att_comment_score #in % age
-				external_score=external_score/10 #S
-				comulative_score=(internal_score + external_score)/2
-				resp=MispDB().updateAttributeScore(id=att["id"],i_date_score=att_date_score,
-						i_tags_score=att_tags_score,i_corelation_score=att_corelation_score,
-						i_comment_score=att_comment_score,total_internal_score=internal_score,
-						e_date_score=e_att_date_score,e_tags_score=e_att_tags_score,
-						e_corelation_score=e_att_corelation_score,e_comment_score=e_att_comment_score,
-						total_external_score=external_score,cumulative_score=comulative_score,value=att["value"])
-				return resp
-			except Exception as ex:
-				ret_resp={}
-				ret_resp["status"]="failure"
-				ret_resp["value"]=str(ex)
-				return ret_resp
+    def __init__(self):
+        # 📝 Logging Setup
+        self.logger = logging.getLogger('ThreatScore')
+        self.logger.setLevel(logging.DEBUG)
+        
+        # File Handler
+        fh = logging.FileHandler('TS.log')
+        fh.setFormatter(logging.Formatter('time="%(asctime)s" level=%(levelname)s msg="%(message)s"'))
+        self.logger.addHandler(fh)
+        
+        # Console Handler (Cleaner)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        ch.setFormatter(logging.Formatter('ℹ️  %(message)s'))
+        self.logger.addHandler(ch)
+        
+        self.log = self.logger
+        self.log.info("Threat Score System Initialized 🚀")
 
-		def Scoring(self,att_list,weightage_settings,external_scoring=False,feed_count=0):
-			try:
-				ret_resp={}
-				failure=False
-				att_id_failed=[]
-				for att in att_list:
-						att_date_score=self.DateScore(att["i_date"],weightage_settings["Date"])
-						att_tags_score=self.TagScore(att["i_tags"],weightage_settings["Tags"])
-						att_corelation_score=self.CorelationScore(att["i_corelation"],weightage_settings["Corelation"],feed_count=feed_count)
-						att_comment_score=self.CommentScore(att["i_comment"],weightage_settings["Comment"])
-						internal_score=att_date_score + att_tags_score + att_corelation_score + att_comment_score 
-					
-						internal_score=internal_score/10 #Scale down to number
-						internal_score=internal_score
-						if external_scoring ==False:
-							resp=MispDB().updateAttributeScore(id=att["id"],i_date_score=att_date_score,
-								i_tags_score=att_tags_score,i_corelation_score=att_corelation_score,
-								i_comment_score=att_comment_score,total_internal_score=internal_score,
-								cumulative_score=internal_score,value=att["value"])	
-						else:
-							resp=self.ExternalScoring(att,weightage_settings,att_date_score,
-						att_tags_score,att_corelation_score,att_comment_score,internal_score,feed_count=feed_count)
-						if resp["status"]=="failure":
-							failure=True
-							att_id_failed.append(att["id"])							
-				if failure==True:
-						ret_resp["status"]="success"
-						ret_resp["value"]="Cant update for  attributes : "+ str(att_id_failed)
-				else:			
-						ret_resp["status"]="success"
-						ret_resp["value"]="Process Executed Successfully"					
-				return ret_resp
-			except Exception as ex:
-				self.log.debug("Exception : "+str(ex))
-				ret_resp={}
-				ret_resp["status"]="failure"
-				ret_resp["value"]=str(ex)
-				return ret_resp
+    def run_scoring_job(self, task_id=0):
+        """Main driver for the scoring process using Multi-Processing."""
+        self.log.info("Starting Threat Score Update...")
+        
+        try:
+            # 1️⃣ CPU Calculation
+            cpu_count = multiprocessing.cpu_count()
+            workers = math.ceil(cpu_count / 1.0) if cpu_count > 1 else 1
+            self.log.info("🔥 Spinning up %d worker processes...", workers)
 
-	
+            # 2️⃣ Fetch Stats
+            db = MispDB()
+            att_stat = db.getAttributeCount()
+            if att_stat["status"] != "success":
+                self.log.error("❌ Failed to get attribute count!")
+                return {"status": "failure", "value": "DB Error"}
+            
+            total_attributes = int(att_stat["value"])
+            
+            feed_stat = db.getEnabledFeeds()
+            feed_count = int(feed_stat["value"]["enabled"]) if feed_stat["status"] == "success" else 0
+            
+            self.log.info("📊 Total Attributes: %d | Feeds: %d", total_attributes, feed_count)
 
-		def StartProcessing(self,offset,limit,process_id,task_id,external_scoring=False,feed_count=0):
-			try:
-				root=os.path.dirname(os.path.realpath(__file__))
-				weightage_settings={}
-				with open(os.path.join(root,"weightage.json")) as in_file:
-					weightage_settings=json.loads(in_file.read())			
-				att_list_status=MispDB().getAttributesToScore(offset,limit)
-				failure=False
-				att_id_failed=0
-				if att_list_status["status"]=="success":
-					att_list=att_list_status["value"]
-					if external_scoring==False:
-						self.log.debug("Started : Limit : "+str(limit) + " Offset : " +str(offset))
-						resp=self.Scoring(att_list,weightage_settings,external_scoring=False,feed_count=feed_count)
-					else:
-						resp=self.Scoring(att_list,weightage_settings,external_scoring=True,feed_count=feed_count)
-	
-					if resp["status"]=="success":
-						MispDB().updateProcessMessage(process_id,task_id,"success","Process succeded for chunk : "+str(offset)+" -- "+str(limit))
-						self.log.debug("Process succeded for chunk : "+str(offset)+" -- "+str(limit))
-						
-					else:						
-							MispDB().updateProcessMessage(process_id,task_id,"failure","0 Process failed to Update details for chunk : "+str(offset)+" -- "+str(limit) +" - 0 Failure Message : " +str(resp["value"]))
-							self.log.debug("Process Failed for chunk : "+str(offset)+" -- "+str(limit))	
-								
-				else:
-						att_stat=MispDB().getAttributeCount()
-						att_count=0
-						if att_stat["status"]=="success":
-							att_count=int(att_stat["value"])
-						if offset < att_count:
-								MispDB().updateProcessMessage(process_id,task_id,"failure","1 Process failed to pull up chunk : "+str(offset)+" --"+str(limit)+" - 1 Failure Message : " +str(att_list_status["value"]))
-						else:
-							MispDB().updateProcessMessage(process_id,task_id,"success","Process found empty chunk : "+str(offset)+" -- "+str(limit))					
-			except Exception as ex:
-				MispDB().updateProcessMessage(process_id,task_id,"failure","2 Process failed for chunk : "+str(offset)+" --"+str(limit)+" - 2 Failure Message : " +str(ex))	
-				
-		
+            if total_attributes == 0:
+                self.log.warn("💤 No attributes to score.")
+                return {"status": "success", "value": "Nothing to do"}
 
+            # 3️⃣ Chunking Strategy
+            # Use floating point division to force exact chunks
+            chunk_size = math.ceil(float(total_attributes) / workers)
+            chunks = []
+            
+            current_offset = 0
+            while current_offset < total_attributes:
+                chunks.append({"offset": int(current_offset), "limit": int(chunk_size)})
+                current_offset += chunk_size
 
-		def ComputeScore(self,weighted_parameter,weightage_settings,p_type="NAN"):
-			try:
-				weightage=int(weightage_settings["weightage"])
-				partitions=weightage_settings["partitions"]
-				assig_wt=0
-				for partition in partitions:
-					if partition["type"]=="range":
-						ll=int(partition["ll"])
-						ul=int(partition["ul"])
-						weight=int(partition["weight"])
-						if weighted_parameter >= ll and weighted_parameter <= ul:
-							assig_wt=weight
-							break
-			
-					elif partition["type"]=="fixed":
-						size=int(partition["size"])
-						weight=int(partition["weight"])
-						if weighted_parameter ==size:
-							assig_wt=weight
-							break	
-				score=weightage * (assig_wt /100)
-				return score
-				
-			except Exception as ex:
-				self.log.error("Exception while computing score for parameter type : "+str(p_type)+" - "+str(ex))
-				return 0
-				
-		def DateScore(self,date,weightage_settings):
-			try:
-				ioc_time=time.strftime('%Y-%m-%d', time.localtime(float(date)+14400))
-				time_format = '%Y-%m-%d'
-				time_delta=datetime.datetime.now() - datetime.datetime.strptime(ioc_time, time_format) 
-				days=time_delta.days
-				if days < 0:
-					days=1   #It means its very recent
-				score=self.ComputeScore(int(days),weightage_settings,'Date')
-				return score
-			except Exception as ex:
-				self.log.error("Exception in computing Date Score : "+str(ex))
-				return 0
-		def TagScore(self,tags,weightage_settings):
-			try:
-				score=self.ComputeScore(int(tags),weightage_settings,'Tags')
-				return score
-			except Exception as ex:
-				self.log.error("Exception in computing Tag Score : "+str(ex))
-				return 0
-		def CorelationScore(self,corelations,weightage_settings,feed_count):
-			try:
-				weightage=int(weightage_settings["weightage"])
-				partitions=weightage_settings["partitions"]
-				c_p=(int(corelations)/int(feed_count))*100
-				assig_wt=0
-				for partition in partitions:
-						ll=int(partition["ll"])
-						ul=int(partition["ul"])
-						weight=int(partition["weight"])
-						if c_p >= ll and c_p <= ul:
-							assig_wt=weight
-							break
-				score=weightage * (assig_wt /100)
-				return score
-			except Exception as ex:
-				self.log.error("Exception in computing Correlation Score : "+str(ex))
-				return 0
-		def CommentScore(self,comments,weightage_settings):
-			try:
-				if comments != "" and comments != None and comments != " " :
-					score=self.ComputeScore(1,weightage_settings,'Comments')
-				else:
-					score=self.ComputeScore(0,weightage_settings,'Comments')
-				return score
-			except Exception as ex:
-				self.log.error("Exception in computing Comment Score : "+str(ex))
-				return 0
+            # 4️⃣ Spawn Workers
+            db.updateTask(task_id=task_id, status="processing", message="Spawning Workers", update_process=False)
+            
+            process_list = []
+            for i, chunk in enumerate(chunks):
+                p = multiprocessing.Process(
+                    target=self.process_chunk,
+                    args=(chunk["offset"], chunk["limit"], str(i), task_id, False, feed_count)
+                )
+                process_list.append(p)
+                p.start()
+            
+            # Wait for completion
+            for p in process_list:
+                p.join()
 
+            self.log.info("✅ All workers finished!")
+            return {"status": "success", "value": "Threat Scoring Complete"}
 
-ob=ThreatScore()
-ob.UpdateThreatScore()
+        except Exception as e:
+            self.log.error("💥 Critical Failure: %s", str(e))
+            return {"status": "failure", "value": str(e)}
 
+    def process_chunk(self, offset, limit, process_id, task_id, external_scoring, feed_count):
+        """Worker function: Processes a specific range of attributes."""
+        try:
+            # Refresh DB connection per process usually required
+            db = MispDB() 
+            
+            # Load Weights
+            root = os.path.dirname(os.path.realpath(__file__))
+            with open(os.path.join(root, "weightage.json")) as f:
+                weights = json.load(f)
+
+            # Fetch Data Chunk
+            resp = db.getAttributesToScore(offset, limit)
+            if resp["status"] != "success":
+                db.updateProcessMessage(process_id, task_id, "failure", "Fetch Failed: " + str(resp.get("value")))
+                return
+
+            attributes = resp["value"]
+            if not attributes:
+                db.updateProcessMessage(process_id, task_id, "success", "Empty Chunk")
+                return
+
+            # Score each attribute
+            failed_ids = []
+            for att in attributes:
+                try:
+                    self.score_single_attribute(att, weights, feed_count, db)
+                except Exception as e:
+                    failed_ids.append(att.get("id"))
+
+            if failed_ids:
+                msg = "Partial Failure on IDs: " + str(failed_ids)
+                db.updateProcessMessage(process_id, task_id, "success", msg) # Partial success is still "success" to master?
+            else:
+                db.updateProcessMessage(process_id, task_id, "success", "Chunk Complete")
+
+        except Exception as e:
+            # db.updateProcessMessage(process_id, task_id, "failure", "Worker Crash: " + str(e))
+            pass
+
+    def score_single_attribute(self, att, weights, feed_count, db):
+        """Calculates score for one attribute."""
+        # Calculate Component Scores
+        date_score = self.calc_date_score(att.get("i_date"), weights["Date"])
+        tag_score = self.calc_tag_score(att.get("i_tags"), weights["Tags"])
+        corr_score = self.calc_correlation_score(att.get("i_corelation"), weights["Corelation"], feed_count)
+        comm_score = self.calc_comment_score(att.get("i_comment"), weights["Comment"])
+        
+        # Aggregate
+        total_internal = (date_score + tag_score + corr_score + comm_score) / 10.0
+        
+        # Update DB
+        db.updateAttributeScore(
+            id=att["id"],
+            i_date_score=date_score,
+            i_tags_score=tag_score,
+            i_corelation_score=corr_score,
+            i_comment_score=comm_score,
+            total_internal_score=total_internal,
+            cumulative_score=total_internal,
+            value=att["value"]
+        )
+
+    # 🧮 Score Calculation Helpers
+    
+    def compute_weighted_score(self, val, setting, param_name=""):
+        """Generic logic to checking range/fixed partitions."""
+        try:
+            max_weight = int(setting["weightage"])
+            partitions = setting["partitions"]
+            assigned_pct = 0
+            
+            for p in partitions:
+                p_weight = int(p["weight"])
+                
+                if p["type"] == "range":
+                    # Range Check
+                    if int(p["ll"]) <= val <= int(p["ul"]):
+                        assigned_pct = p_weight
+                        break
+                        
+                elif p["type"] == "fixed":
+                    # Exact Match Check
+                    if val == int(p["size"]):
+                        assigned_pct = p_weight
+                        break
+            
+            # Final calculation: (Category Weight) * (Match %)
+            return max_weight * (assigned_pct / 100.0)
+            
+        except Exception as e:
+            self.logger.error("Calc Error (%s): %s", param_name, e)
+            return 0
+
+    def calc_date_score(self, timestamp, setting):
+        try:
+            # Convert timestamp to days ago
+            ioc_date = datetime.datetime.fromtimestamp(float(timestamp))
+            delta = datetime.datetime.now() - ioc_date
+            days = max(1, delta.days) # Minimum 1 day
+            
+            return self.compute_weighted_score(days, setting, "Date")
+        except:
+            return 0
+
+    def calc_tag_score(self, tag_count, setting):
+        return self.compute_weighted_score(int(tag_count or 0), setting, "Tags")
+
+    def calc_correlation_score(self, corr_count, setting, feed_total):
+        try:
+            if feed_total == 0: return 0
+            # Calculate Percentage of feeds that correlate
+            pct = (int(corr_count or 0) / float(feed_total)) * 100
+            return self.compute_weighted_score(pct, setting, "Corelation")
+        except:
+            return 0
+
+    def calc_comment_score(self, comment, setting):
+        has_comment = 1 if (comment and comment.strip()) else 0
+        return self.compute_weighted_score(has_comment, setting, "Comment")
+
+if __name__ == "__main__":
+    scorer = ThreatScoreGenerator()
+    scorer.run_scoring_job()

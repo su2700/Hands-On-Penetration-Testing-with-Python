@@ -1,38 +1,63 @@
-from libnessus.parser import NessusParser
-import sys
-class Nessus_Parser:
-	def __init__(self,file_name):
-		self.n_file=file_name
+#!/usr/bin/env python
+"""
+🔍 Nessus Report Parser
+Parses `.nessus` XML files to extract and display vulnerability findings.
+Requires `libnessus` module. 📊
+"""
 
-	def demo_print(self,nessus_obj_list):
-		docu = {}
-		OKGREEN = '\033[92m'
-		OKBLUE = '\033[94m'
-		OKRED = '\033[93m'
-		for i in nessus_obj_list.hosts:
-				print(OKRED +"Host : "+i.ip+"	Host Name : "+i.name +"	OS : "+i.get_host_property('operating-system'))	
-				for v in i.get_report_items:
-					print("\t"+OKGREEN+str("Plugin id :"+OKBLUE+str(v.plugin_id)))
-					print("\t"+OKGREEN+str("Plugin name : "+OKBLUE+str(v.plugin_name)))
-					print("\t"+OKGREEN+"Sevirity : "+OKBLUE+str(v.severity))
-					print("\t"+OKGREEN+str("Service name :"+OKBLUE+str(v.service)))		
-					print("\t"+OKGREEN+str("Protocol :"+OKBLUE+str(v.protocol)))
-					print("\t"+OKGREEN+str("Port : "+OKBLUE+str(v.port)))
-					print("\t"+OKGREEN+"Synopsis :"+OKBLUE+str(v.synopsis))
-					print("\t"+OKGREEN+"Description : \n\t"+OKBLUE+str(v.description))
-					print("\t"+OKGREEN+"Risk vectors :"+OKBLUE+str(v.get_vuln_risk))
-					print("\t"+OKGREEN+"External references :"+OKBLUE+str(v.get_vuln_xref))
-					print("\t"+OKGREEN+"Solution :"+OKBLUE+str(v.solution))
-					print("\n")
-	def parse(self):
-			file_=self.n_file
-			try:
-				nessus_obj_list = NessusParser.parse_fromfile(file_)
-			except Exception as eee:
-				print("file cannot be imported : %s" % file_)
-				print("Exception 1 :"+str(eee))
-				return 
-			self.demo_print(nessus_obj_list)
-obj=Nessus_Parser(sys.argv[1])
-obj.parse()
-			
+import sys
+# Try/Except block for the external library to avoid immediate crashes if missing
+try:
+    from libnessus.parser import NessusParser
+except ImportError:
+    print "❌ Error: 'libnessus' module not found. Please install it."
+    sys.exit(1)
+
+class NessusReportViewer:
+    def __init__(self, file_name):
+        self.nessus_file = file_name
+        # 🎨 Colors for Output
+        self.colors = {
+            'HEADER': '\033[95m',
+            'BLUE': '\033[94m',
+            'GREEN': '\033[92m',
+            'WARNING': '\033[93m',
+            'FAIL': '\033[91m',
+            'END': '\033[0m',
+            'BOLD': '\033[1m'
+        }
+
+    def print_report(self, nessus_obj):
+        """Iterates through hosts and findings"""
+        print "\n📊 === Nessus Report Summary === 📊\n"
+        
+        for host in nessus_obj.hosts:
+            print self.colors['FAIL'] + "🖥️  Host: " + host.ip 
+            print "    Hostname: " + host.name
+            print "    OS: " + str(host.get_host_property('operating-system')) + self.colors['END']
+            print "-" * 50
+
+            for item in host.get_report_items:
+                # Severity Color Coding could be added here
+                print self.colors['GREEN'] + "   🧩 Plugin ID: " + self.colors['BLUE'] + str(item.plugin_id)
+                print self.colors['GREEN'] + "   📛 Name:      " + self.colors['BLUE'] + str(item.plugin_name)
+                print self.colors['GREEN'] + "   🔥 Severity:  " + self.colors['BLUE'] + str(item.severity)
+                print self.colors['GREEN'] + "   🔌 Port:      " + self.colors['BLUE'] + str(item.port) + "/" + str(item.protocol)
+                print self.colors['GREEN'] + "   📝 Synopsis:  " + self.colors['BLUE'] + str(item.synopsis)
+                print self.colors['END']
+                print "   -----------------------------"
+
+    def parse(self):
+        print "📂 Parsing file: " + self.nessus_file
+        try:
+            nessus_obj = NessusParser.parse_fromfile(self.nessus_file)
+            self.print_report(nessus_obj)
+        except Exception as e:
+            print "❌ Failed to parse file: " + str(e)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print "Usage: python Nessus_parser.py <report.nessus>"
+    else:
+        viewer = NessusReportViewer(sys.argv[1])
+        viewer.parse()

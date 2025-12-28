@@ -1,35 +1,67 @@
-#! /usr/bin/python3.5
+#!/usr/bin/env python3
+"""
+🏃💨 The Relay Race (Thread Communication)
+Threads talking to each other using 'Events'. 🚦
+One thread runs, signals "READY!", and the other reacts.
+"""
 
 import threading
 import time
 import logging
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-10s) %(message)s',)
-counter=0
-class Communicate():
-	def __init__(self):
-		pass
-	def wait_for_event(self,e):
-		global counter
-		logging.debug("Wait for counter to become 5")
-		is_set=e.wait()
-		logging.debug("Hurray !! Now counter has become %s",counter)
-	def increment_counter(self,e,wait_time):
-		global counter
-		while counter < 10 :
-			logging.debug("About to increment counter")
-			if e.is_set() ==False:
-				e.wait(wait_time)
-			else:
-				time.sleep(1)
-			counter=counter +1
-			logging.debug("Counter Incremented : %s ",counter)
-			if counter == 5:
-				e.set()	
-obj=Communicate()
-e=threading.Event()
-t1=threading.Thread(name="Thread 1",target=obj.wait_for_event,args=(e,))
-t2=threading.Thread(name="Thread 2",target=obj.increment_counter,args=(e,1))
-t1.start()
-t2.start()
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='(%(threadName)-10s) 👉 %(message)s',
+)
+
+class BatonPass:
+    def __init__(self):
+        self.counter = 0
+        
+    def runner_waiter(self, event):
+        """
+        I wait for the signal to sprint! 🏃
+        """
+        logging.debug("💤 Waiting for the signal (Event)...")
+        
+        # This blocks untill event.set() is called
+        event.wait()
+        
+        logging.debug(f"⚡ SIGNAL RECEIVED! Counter reached target: {self.counter}")
+        logging.debug("🏁 I finished my part!")
+
+    def runner_starter(self, event, target_val=5):
+        """
+        I run the first leg of the race. 👟
+        """
+        while self.counter < 10:
+            logging.debug(f"🏃 Running... Step {self.counter}")
+            
+            # Simulate effort
+            time.sleep(0.5)
+            self.counter += 1
+            
+            # Check if we should signal
+            if self.counter == target_val:
+                logging.debug("🚨 REACHED TARGET! Signaling Event!")
+                event.set() # Wake up the other thread!
+
+if __name__ == "__main__":
+    print("\n--- 🏁 Relay Race Start ---")
+    
+    race = BatonPass()
+    
+    # 🚦 The Event Object (Flag)
+    start_signal = threading.Event()
+    
+    # Create Threads
+    t_waiter = threading.Thread(name="Waiter", target=race.runner_waiter, args=(start_signal,))
+    t_starter = threading.Thread(name="Starter", target=race.runner_starter, args=(start_signal, 5))
+    
+    t_waiter.start()
+    t_starter.start()
+    
+    t_waiter.join()
+    t_starter.join()
+    
+    print("\n✅ Race Complete!")

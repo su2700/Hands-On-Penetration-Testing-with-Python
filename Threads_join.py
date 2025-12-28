@@ -1,53 +1,67 @@
-#! /usr/bin/python3.6
+#!/usr/bin/env python3
+"""
+🤝 Thread Joining
+Demonstrates waiting for threads to finish (Joining).
+"We finish together!" 🏃‍♂️🏃‍♀️
+"""
+
 import threading
 import time
 import logging
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-10s) %(message)s',
-                    )
-class Multi_Threads():
-	def __init__(self):
-		pass
-	def execute(self):
-		t = threading.currentThread()
-		logging.debug("Enter : " +str(t.name))
-		logging.debug("Executing : " +str(t.name))
-		time.sleep(2)
-		logging.debug("Exit : " +str(t.name))
-		return
-class Driver():
-	def __init__(self):
-		self.counter=0
-	def main(self):
-		m=Multi_Threads()
-		total=6
-		my_threads=[]
-		while True:
-			all_threads=threading.enumerate()
-			if len(all_threads) < 4 and self.counter < 6:
-				t=threading.Thread
-				(name="Thread "+str(self.counter),target=m.execute)
-				my_threads.append(t)
-				t.start()
-				self.counter=self.counter+1
-			else:
-				pass
-			if self.counter >= 6:
-				logging.debug("Exiting loop as 6 threads executed")
-				break
-		for t in my_threads:
-			if t.isAlive():
-				logging.debug("Thread :" + t.name +" is alive .Joining !")
-				t.join()
-			else:
-				logging.debug("Thread : " +t.name + " Executed ")
-		print("\nExiting main")
-obj=Driver()
-obj.main()
-				
-		
-		
-		
-		
-				
-		
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='(%(threadName)-10s) %(message)s',
+)
+
+class TaskRunner:
+    def execute(self):
+        t = threading.currentThread()
+        logging.debug("✅ Started")
+        time.sleep(2)
+        logging.debug("🏁 Finished")
+
+class ThreadManager:
+    def __init__(self):
+        self.counter = 0
+        self.max_threads = 6
+        self.active_limit = 3 # Only run 3 at a time
+
+    def start_workflow(self):
+        runner = TaskRunner()
+        my_threads = []
+        
+        logging.debug("🚀 Workflow Started. Aiming to run %d threads total.", self.max_threads)
+
+        while True:
+            # Check active threads (excluding MainThread)
+            current_active = threading.active_count() - 1 
+            
+            if current_active < self.active_limit and self.counter < self.max_threads:
+                # 🆕 Spawn new thread
+                t_name = "Worker-" + str(self.counter)
+                t = threading.Thread(name=t_name, target=runner.execute)
+                my_threads.append(t)
+                t.start()
+                self.counter += 1
+                logging.debug("➕ Spawned %s (Total spawned: %d)", t_name, self.counter)
+            
+            # Exit loop if we launched everything
+            if self.counter >= self.max_threads:
+                logging.debug("🛑 All threads launched. Waiting for completion...")
+                break
+                
+            time.sleep(0.5) # Breath
+
+        # 🤝 Join all threads (Wait for them)
+        for t in my_threads:
+            if t.is_alive():
+                logging.debug("⏳ Waiting for %s...", t.name)
+                t.join()
+                logging.debug("👋 %s joined.", t.name)
+        
+        print("\n🎉 Exiting Main. All work done!")
+
+if __name__ == "__main__":
+    manager = ThreadManager()
+    manager.start_workflow()

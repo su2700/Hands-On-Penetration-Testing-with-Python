@@ -1,86 +1,118 @@
-#! /usr/bin/python3.6
-import csv,sys
-class CSV_parser():
-	def __init__(self,csv_):
-		self.csv_=csv_
-		self.employees=[]
-	def parse_basic(self):
-		print("\n(M1) : Reading with reader ")
-		with open(self.csv_) as csvfile:
-			readCSV = csv.reader(csvfile, delimiter=',')
-			header=next(readCSV)
-			print("Header is : "+str(header))
-			print()
-			hdr=header[0]+"\t"+header[1]+"\t"\
-			+header[2]+"\t"+header[3]+"\t"+header[4]
-			print(hdr)
-			for ind,row in enumerate(readCSV):
-				values=row[0]+"\t"+row[1]+"\t"\
-				+row[2]+"\t"+row[3]+"\t"+row[4]
-				print(values)
-				emp={header[0]:row[0],header[1]:row[1],
-				header[2]:row[2],header[3]:row[3],
-				header[4]:row[4],
-				header[5]:row[5],header[6]:row[6]}
-				self.employees.append(emp)
-		
-		print("\n(M2) : Reading with DictReader ")
-		with open(self.csv_) as csvfile:
-			reader = csv.DictReader(csvfile)
-			header=reader.fieldnames
-			hdr=header[0]+"\t"+header[1]+"\t"\
-			+header[2]+"\t"+header[3]+"\t"+header[4]
-			print("\n"+hdr)
-			for ind,row in enumerate(reader):
-				values=row["Name"]+"\t"+row["Age"]\
-				+"\t"+row["Salary"]+"\t"+row["M_id"]\
-				+"\t"+row["Slab"]	
-				print(values)
-
-	def process(self):
-		for emp in self.employees:
-			if int(emp["Salary"]) >=30000:
-				emp["Slab"]="A"
-			else:
-				emp["Slab"]="B"
-		header=self.employees[0].keys()
-		print("\n(M1) : Writing with DictWriter ")
-		with open(self.csv_,"w") as csvfile:
-			writer = csv.DictWriter(csvfile,fieldnames=header)
-			writer.writeheader()
-			writer.writerows(self.employees)
-		print("Data written ! \n")
-		self.parse_basic()
-		print("Reprinting all !")
-		
-		
-		"""
-		Method 2 ,to write row wise -> using DictWriter
-		with open(self.csv_,"w") as csvfile:
-			writer = csv.DictWriter(csvfile,fieldnames=header)
-			for row in self.employees:
-				writer.writerow(row)
-		"""
-		
-		"""
-		Method 3 ,to write from list of lsits -> usring writer
-		salf.data=[['col1','col2','col3'],['d11','d12','d13'],['d21','d22','d23']]
-		with open(self.csv_,"w") as csvfile:
-			writer = csv.Writer(csvfile,fieldnames=header)
-			writer.writerows(self.data)
-		"""
-		
-			
-		
-obj=CSV_parser(sys.argv[1])
-obj.parse_basic()
-print("\n\n")
-obj.process()
-
-
+#!/usr/bin/env python3
 """
-with open("log.txt") as infile:
-    for line in infile:
-        do_something_with(line)
+📊 CSV Parser
+Crunching spreadsheet data! 🔢
+We read, we filter, we write back! ♻️
 """
 
+import csv
+import sys
+import os
+
+class CSVParser:
+    def __init__(self, filepath):
+        self.csv_path = filepath
+        self.employees = []
+        
+        if not os.path.exists(filepath):
+            print(f"❌ Error: File '{filepath}' not found!")
+            # Create a dummy file if needed for demo?
+            # For now, we will handle it gracefully.
+
+    def parse_basic(self):
+        """Reads CSV using standard Reader and DictReader 📖"""
+        print("\n" + "="*40)
+        print("       READING CSV DATA       ")
+        print("="*40)
+
+        # Method 1: Standard Reader (Returns Lists) 📋
+        print("\n1️⃣  Standard Reader (Lists):")
+        try:
+            with open(self.csv_path, 'r') as csvfile:
+                reader = csv.reader(csvfile)
+                header = next(reader) # Skip Header
+                
+                print(f"   🏷️  Header: {header}")
+                print("   👇 User Data:")
+                
+                for row in reader:
+                    print(f"      🔹 {row}")
+                    
+                    # Store as dictionary for processing later
+                    # Note: This relies on specific column indexes!
+                    if len(row) >= 5:
+                        emp = {
+                            "Name": row[0],
+                            "Age": row[1],
+                            "Salary": row[2],
+                            "M_id": row[3],
+                            "Slab": row[4] # Assuming Slab is column 4
+                        }
+                        self.employees.append(emp)
+                        
+        except Exception as e:
+            print(f"   ❌ Read Error: {e}")
+
+        # Method 2: DictReader (Returns Dictionaries) 📕
+        print("\n2️⃣  DictReader (Dictionaries):")
+        try:
+            with open(self.csv_path, 'r') as csvfile:
+                reader = csv.DictReader(csvfile)
+                print(f"   🏷️  Fields: {reader.fieldnames}")
+                
+                for row in reader:
+                    # Clean output
+                    print(f"      🔸 {row['Name']} | ${row['Salary']}")
+                    
+        except Exception as e:
+            print(f"   ❌ DictReader Error: {e}")
+
+    def process_data(self):
+        """Filters data and updates the file! ⚙️"""
+        print("\n" + "="*40)
+        print("       PROCESSING DATA       ")
+        print("="*40)
+        
+        if not self.employees:
+            print("   ⚠️ No data to process! Run parse_basic() first?")
+            return
+
+        print("   ⚙️  Calculating Slabs (A for Salary >= 30,000)...")
+        for emp in self.employees:
+            try:
+                salary = int(emp.get("Salary", 0))
+                if salary >= 30000:
+                    emp["Slab"] = "A 🌟"
+                else:
+                    emp["Slab"] = "B"
+            except ValueError:
+                 print(f"      ⚠️ Invalid Salary for {emp.get('Name')}")
+
+        print("   💾 Saving Updated Data...")
+        
+        # Write back to file
+        try:
+            header = self.employees[0].keys()
+            with open(self.csv_path, "w", newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=header)
+                writer.writeheader()
+                writer.writerows(self.employees)
+            print("   ✅ Data Saved Successfully!")
+            
+        except Exception as e:
+            print(f"   ❌ Write Error: {e}")
+
+        # Reprint to show changes
+        self.parse_basic()
+
+if __name__ == "__main__":
+    # Default to 'employees.csv' if no arg provided
+    target_file = "employees.csv"
+    if len(sys.argv) > 1:
+        target_file = sys.argv[1]
+    
+    print(f"🎯 Target File: {target_file}")
+    
+    parser = CSVParser(target_file)
+    parser.parse_basic()
+    parser.process_data()

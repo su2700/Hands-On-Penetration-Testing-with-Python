@@ -1,31 +1,53 @@
-from libnmap.parser import NmapParser
+#!/usr/bin/env python
+"""
+🗺️ Nmap XML Parser
+Parses Nmap XML reports to show Hosts, Ports, and Services nicely.
+Requires `libnmap` module. 🔍
+"""
+
 import sys
+try:
+    from libnmap.parser import NmapParser
+except ImportError:
+    print "❌ Error: 'libnmap' module not found."
+    sys.exit(1)
 
-class nmap_parser:
-	def __init__(self,report_file):
-		self.report_file=report_file
+class NmapReportViewer:
+    def __init__(self, report_file):
+        self.report_file = report_file
 
-	def parse(self):
-		report=NmapParser.parse_fromfile(self.report_file)
-		bulk_list=""
-		hosts=report.hosts
-		for host in hosts:
-			if host.is_up():
-				
-				portso=host.get_open_ports()
-				if portso:
-					print("Up Host with service : " +str(host.address))
-				for port_service in portso:
-					
-					service =host.get_service(port_service[0],port_service[1])
-					print("\t Address : "+ str(host.address))
-					print("\t Open Port : "+ str(port_service[0]))
-					print("\t Service : "+ str(service.service))
-					print("\t State : "+ str(service.state))
-					print("\t Version /Banner: "+ str(service.banner))
-					print("\n")
-					
-			else:
-				print("Down Host : " +str(host.address))
-obj=nmap_parser(sys.argv[1])
-obj.parse()
+    def parse(self):
+        print "\n📂 Parsing Nmap XML: " + self.report_file
+        try:
+            report = NmapParser.parse_fromfile(self.report_file)
+        except Exception as e:
+            print "❌ Parsing Error: " + str(e)
+            return
+
+        print "🚀 Scan Summary: " + report.summary
+        print "\n--- HOSTS ---\n"
+
+        for host in report.hosts:
+            if host.is_up():
+                print "✅ Host Up: " + str(host.address) + " (" + str(len(host.hostnames)) + " hostnames)"
+                
+                open_ports = host.get_open_ports()
+                if open_ports:
+                    print "   🔓 Open Services:"
+                    for port, proto in open_ports:
+                        service = host.get_service(port, proto)
+                        print "      🔹 Port:    " + str(port) + "/" + proto
+                        print "         Service: " + str(service.service)
+                        print "         State:   " + str(service.state)
+                        if service.banner:
+                            print "         Banner:  " + str(service.banner)
+                        print ""
+            else:
+                print "❌ Host Down: " + str(host.address)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print "Usage: python nmap_parser.py <nmap_output.xml>"
+    else:
+        viewer = NmapReportViewer(sys.argv[1])
+        viewer.parse()

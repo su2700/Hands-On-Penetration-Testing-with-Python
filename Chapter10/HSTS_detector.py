@@ -1,26 +1,43 @@
+#!/usr/bin/env python
+"""
+🔒 HSTS Detector
+Checks if Strict-Transport-Security is enabled.
+(Forces browsers to use HTTPS only!) 🛡️
+"""
+
 import requests
 
-class Detect_HSTS():
-	def __init__(self,target):
-		self.target=target
+class HSTSDetector:
+    def __init__(self, target):
+        self.target = target
+        print "\n🛡️ HSTS Detector Initialized!"
+        print "   🎯 Target: " + self.target
 
-	def start(self):
-		try:
-			resp=requests.get(self.target)
-			headers=resp.headers
-			print ("\n\nHeaders set are : \n" )
-			for k,v in headers.iteritems():
-				print(k+":"+v)
+    def start_scan(self):
+        """Starts the detection logic."""
+        try:
+            print "   📡 Sending request..."
+            resp = requests.get(self.target)
+            headers = resp.headers
+            
+            print "\n   📋 === HTTP HEADERS === "
+            for k, v in headers.iteritems():
+                print "   🔹 " + k + ": " + v
+            print "   ======================="
 
-			if "Strict-Transport-Security" in headers.keys():
-				print("\n\nHSTS Header present")
-			else:
-				print("\n\nStrict-Transport-Security is missing ! ")
+            # 🧐 Check for HSTS
+            if "Strict-Transport-Security" in headers:
+                print "\n   ✅ SAFE: 'Strict-Transport-Security' header is present."
+                print "      Value: " + headers["Strict-Transport-Security"]
+            else:
+                print "\n   ⚠️ VULNERABLE: 'Strict-Transport-Security' header is MISSING!"
+                print "      (This site does not enforce HTTPS via HSTS!)"
 
-		except Exception as ex:
-			print("EXception caught : " +str(ex))
+        except Exception as ex:
+            print "   ❌ Exception: " + str(ex)
 
-obj=Detect_HSTS("http://192.168.250.1/dvwa")
-obj.start()
-
-
+if __name__ == "__main__":
+    # DVWA Example URL
+    target_url = "http://192.168.250.1/dvwa" 
+    detector = HSTSDetector(target_url)
+    detector.start_scan()
