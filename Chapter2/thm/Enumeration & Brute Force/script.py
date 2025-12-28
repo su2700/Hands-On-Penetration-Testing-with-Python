@@ -1,7 +1,8 @@
 import requests
 import sys
+from typing import Dict, Any, List
 
-def check_email(email):
+def check_email(email: str) -> Dict[str, Any]:
     """
     🕵️‍♂️ The Detective Function
     Sends a request to the server to check if an email exists.
@@ -33,10 +34,13 @@ def check_email(email):
     }
 
     # 🚀 Send the Post Request!
+    # 'response' is an OBJECT of class requests.models.Response 🎩
     response = requests.post(url, headers=headers, data=data)
+    
+    # We unbox the JSON into a Dictionary 📖
     return response.json()
 
-def enumerate_emails(email_file):
+def enumerate_emails(email_file: str) -> List[str]:
     """
     📋 The List Processor
     Reads a file line-by-line and sends the Detective to check each one.
