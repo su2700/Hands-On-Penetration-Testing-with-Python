@@ -1,4 +1,5 @@
 import requests
+from requests.models import Response # 🎩 Importing the Class
 import sys
 from typing import Dict, Any, List
 
@@ -34,8 +35,8 @@ def check_email(email: str) -> Dict[str, Any]:
     }
 
     # 🚀 Send the Post Request!
-    # 'response' is an OBJECT of class requests.models.Response 🎩
-    response = requests.post(url, headers=headers, data=data)
+    # Explicitly telling Python: "This variable IS a Response object"
+    response: Response = requests.post(url, headers=headers, data=data)
     
     # We unbox the JSON into a Dictionary 📖
     return response.json()
