@@ -36,10 +36,10 @@ def check_email(email: str) -> Dict[str, Any]:
 
     # 🚀 Send the Post Request!
     # Explicitly telling Python: "This variable IS a Response object"
-    response: Response = requests.post(url, headers=headers, data=data)
+    server_reply: Response = requests.post(url, headers=headers, data=data)
     
     # We unbox the JSON into a Dictionary 📖
-    return response.json()
+    return server_reply.json()
 
 def enumerate_emails(email_file: str) -> List[str]:
     """
